@@ -1,0 +1,43 @@
+plugins {
+    id 'java'
+}
+
+group 'lib.naucourse.chooser'
+version '1.0'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.jsoup:jsoup:1.12.1'
+    compile 'com.squareup.okhttp3:okhttp:4.2.1'
+    compile 'com.google.code.gson:gson:2.8.6'
+}
+
+def applicationName = 'NauCourseChooser-Java'
+
+task pureJar(type: Jar) {
+    delete 'build/libs/' + applicationName + '-' + archiveVersion.toString() + '.jar'
+    manifest {
+        attributes 'Implementation-Title': applicationName
+        attributes 'Implementation-Version': archiveVersion.toString()
+    }
+    from files('build/resources/main')
+    from files('build/classes/java/main')
+}
+
+task completeJar(type: Jar) {
+    delete 'build/libs/' + applicationName + '-' + archiveVersion.toString() + '-with-dependencies.jar'
+    archiveClassifier.set 'with-dependencies'
+    manifest {
+        attributes 'Implementation-Title': applicationName
+        attributes 'Implementation-Version': archiveVersion.toString()
+    }
+    from files('build/resources/main')
+    from files('build/classes/java/main')
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}

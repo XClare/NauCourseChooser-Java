@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="lib.xfy9326.naucourse.chooser.lib.xfy9326.naucourse.chooser.main" target="1.8" />
+      <module name="lib.xfy9326.naucourse.chooser.lib.xfy9326.naucourse.chooser.test" target="1.8" />
+      <module name="lib.xfy9326.naucourse.lib.xfy9326.naucourse.chooser.main" target="1.8" />
+      <module name="lib.xfy9326.naucourse.lib.xfy9326.naucourse.chooser.test" target="1.8" />
+      <module name="lib.xfy9326.naucourse.NauCourseC.main" target="1.8" />
+      <module name="lib.xfy9326.naucourse.NauCourseC.test" target="1.8" />
+      <module name="lib.xfy9326.naucoursechooser.lib.xfy9326.naucourse.chooser.main" target="1.8" />
+      <module name="lib.xfy9326.naucoursechooser.lib.xfy9326.naucourse.chooser.test" target="1.8" />
+      <module name="nau.xfy9326.coursechooser.lib.xfy9326.naucourse.chooser.main" target="1.8" />
+      <module name="nau.xfy9326.coursechooser.lib.xfy9326.naucourse.chooser.test" target="1.8" />
+      <module name="NauCourseChooser.lib.xfy9326.naucourse.chooser.main" target="1.8" />
+      <module name="NauCourseChooser.lib.xfy9326.naucourse.chooser.test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
