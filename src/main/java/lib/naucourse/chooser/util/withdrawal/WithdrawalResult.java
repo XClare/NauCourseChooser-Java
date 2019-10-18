@@ -1,5 +1,6 @@
 package lib.naucourse.chooser.util.withdrawal;
 
+import lib.naucourse.chooser.net.CourseWithdrawal.WithdrawalError;
 import lib.naucourse.chooser.util.CourseType;
 import lib.naucourse.chooser.util.SelectedCourse;
 
@@ -7,7 +8,7 @@ public class WithdrawalResult {
     private final boolean isSuccess;
     private final SelectedCourse selectedCourse;
     private final CourseType courseType;
-    private final int errorCode;
+    private final WithdrawalError errorCode;
     private final String resultMsg;
 
     /**
@@ -19,7 +20,7 @@ public class WithdrawalResult {
      * @param errorCode      错误代码
      * @param isSuccess      请求是否成功
      */
-    public WithdrawalResult(CourseType courseType, SelectedCourse selectedCourse, String resultMsg, int errorCode, boolean isSuccess) {
+    public WithdrawalResult(CourseType courseType, SelectedCourse selectedCourse, String resultMsg, WithdrawalError errorCode, boolean isSuccess) {
         this.selectedCourse = selectedCourse;
         this.courseType = courseType;
         this.resultMsg = resultMsg;
@@ -39,7 +40,7 @@ public class WithdrawalResult {
         return courseType;
     }
 
-    public int getErrorCode() {
+    public WithdrawalError getErrorCode() {
         return errorCode;
     }
 

@@ -45,7 +45,7 @@ public class Main {
                         for (CourseType courseType : courseTypes) {
                             System.out.println(courseType.getName());
                         }
-                        jwcManage.getCourseList(courseTypes.get(7), new CourseList.OnCourseListListener() {
+                        jwcManage.getCourseList(courseTypes.get(2), new CourseList.OnCourseListListener() {
                             @Override
                             public void getCourseList(CourseType courseType, ArrayList<Course> courseList, ArrayList<SelectedCourse> courseSelectedList) {
                                 System.out.println("\nSelected:");

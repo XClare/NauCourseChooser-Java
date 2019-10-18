@@ -1,6 +1,7 @@
 package lib.naucourse.chooser.net.school;
 
 import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -91,7 +92,7 @@ public class SchoolClient {
             //首次请求SSO的页面，获取Cookies与Ticket
             client.newCall(new Request.Builder().url(SSO_JWC_LOGIN_URL).build()).enqueue(new Callback() {
                 @Override
-                public void onFailure(Call call, IOException e) {
+                public void onFailure(@NotNull Call call, @NotNull IOException e) {
                     //超时错误另外处理
                     if (onNetListener != null) {
                         if (e instanceof SocketTimeoutException) {
@@ -103,7 +104,7 @@ public class SchoolClient {
                 }
 
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
+                public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                     ResponseBody responseBody = response.body();
                     if (responseBody != null) {
                         FormBody postForm = getSSOPostForm(userId, userPw, responseBody.string());
@@ -112,7 +113,7 @@ public class SchoolClient {
                         //进行SSO登陆
                         client.newCall(new Request.Builder().url(SSO_JWC_LOGIN_URL).post(postForm).build()).enqueue(new Callback() {
                             @Override
-                            public void onFailure(Call call, IOException e) {
+                            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                                 if (onNetListener != null) {
                                     if (e instanceof SocketTimeoutException) {
                                         onNetListener.onError(TIME_OUT);
@@ -123,7 +124,7 @@ public class SchoolClient {
                             }
 
                             @Override
-                            public void onResponse(Call call, Response response) throws IOException {
+                            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                                 ResponseBody responseBody = response.body();
                                 if (responseBody != null) {
                                     String body = responseBody.string();
@@ -201,7 +202,7 @@ public class SchoolClient {
         if (loginStatus) {
             client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
                 @Override
-                public void onFailure(Call call, IOException e) {
+                public void onFailure(@NotNull Call call, @NotNull IOException e) {
                     //超时错误另外处理
                     if (onNetListener != null) {
                         if (e instanceof SocketTimeoutException) {
@@ -213,7 +214,7 @@ public class SchoolClient {
                 }
 
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
+                public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                     ResponseBody responseBody = response.body();
                     if (responseBody != null) {
                         String result = responseBody.string();
@@ -340,7 +341,7 @@ public class SchoolClient {
     public void jwcLogout(final OnNetListener onNetListener) {
         client.newCall(new Request.Builder().url(JWC_LOGOUT_URL).build()).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 loginStatus = false;
                 mainPageUrl = null;
                 cookieStore.clearCookies();
@@ -350,11 +351,11 @@ public class SchoolClient {
             }
 
             @Override
-            public void onResponse(Call call, Response response) {
+            public void onResponse(@NotNull Call call, @NotNull Response response) {
                 response.close();
                 client.newCall(new Request.Builder().url(SSO_JWC_LOGOUT_URL).build()).enqueue(new Callback() {
                     @Override
-                    public void onFailure(Call call, IOException e) {
+                    public void onFailure(@NotNull Call call, @NotNull IOException e) {
                         loginStatus = false;
                         mainPageUrl = null;
                         cookieStore.clearCookies();
@@ -364,7 +365,7 @@ public class SchoolClient {
                     }
 
                     @Override
-                    public void onResponse(Call call, Response response) {
+                    public void onResponse(@NotNull Call call, @NotNull Response response) {
                         response.close();
                         loginStatus = false;
                         mainPageUrl = null;

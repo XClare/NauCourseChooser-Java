@@ -3,6 +3,7 @@ package lib.naucourse.chooser.manage;
 import lib.naucourse.chooser.net.CourseChoose;
 import lib.naucourse.chooser.net.CourseList;
 import lib.naucourse.chooser.net.CourseWithdrawal;
+import lib.naucourse.chooser.net.coursetype.*;
 import lib.naucourse.chooser.net.school.SchoolClient;
 import lib.naucourse.chooser.util.Course;
 import lib.naucourse.chooser.util.CourseType;
@@ -34,9 +35,21 @@ public class SchoolClientManage {
      */
     public SchoolClientManage(DataPath dataPath, int connectTimeOut, int readTimeOut, int writeTimeOut) {
         this.schoolClient = new SchoolClient(dataPath.getCachePath(), connectTimeOut, readTimeOut, writeTimeOut);
-        this.courseList = new CourseList(schoolClient);
+        this.courseList = new CourseList(schoolClient, new DefaultAnalyseCourseType());
+        this.courseList.addNewCourseType(new EnglishFollowAnalyseCourse(),
+                new MajorAnalyseCourse(),
+                new SchoolRetakeAnalyseCourse());
         this.courseChoose = new CourseChoose(schoolClient);
         this.courseWithdrawal = new CourseWithdrawal(schoolClient);
+    }
+
+    /**
+     * 增加新的课程类别的分析器
+     *
+     * @param courseTypes 课程类别分析
+     */
+    public void addNewAnalyseType(AnalyseCourseType... courseTypes) {
+        this.courseList.addNewCourseType(courseTypes);
     }
 
     /**

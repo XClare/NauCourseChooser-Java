@@ -1,5 +1,6 @@
 package lib.naucourse.chooser.net;
 
+import lib.naucourse.chooser.net.coursetype.AnalyseCourseType;
 import lib.naucourse.chooser.net.school.SchoolClient;
 import lib.naucourse.chooser.util.Course;
 import lib.naucourse.chooser.util.CourseType;
@@ -11,6 +12,7 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class CourseList {
     /**
@@ -31,14 +33,18 @@ public class CourseList {
     static final String SUBMIT_TYPE_ZX = "ZX_Submit";
 
     private final SchoolClient schoolClient;
+    private final AnalyseCourseType defaultCourseType;
+    private final ArrayList<AnalyseCourseType> analyseCourseTypes = new ArrayList<>();
 
     /**
      * 课程列表获取
      *
-     * @param schoolClient 教务客户端
+     * @param schoolClient             教务客户端
+     * @param defaultAnalyseCourseType 默认的课程类别分析器
      */
-    public CourseList(SchoolClient schoolClient) {
+    public CourseList(SchoolClient schoolClient, AnalyseCourseType defaultAnalyseCourseType) {
         this.schoolClient = schoolClient;
+        this.defaultCourseType = defaultAnalyseCourseType;
     }
 
     /**
@@ -89,281 +95,67 @@ public class CourseList {
     }
 
     /**
-     * 从html获取指定类别的课程列表
-     * 会将课程类别填充完整
+     * 填充课程类别对象
      *
-     * @param html               网页数据
-     * @param courseType         课程类别
-     * @param courseList         课程列表
-     * @param courseSelectedList 已选课程列表
+     * @param body       HTML body
+     * @param html       HTML 原文
+     * @param courseType 课程类别
      */
-    private static void getCourseListFromHtml(String html, CourseType courseType, ArrayList<Course> courseList, ArrayList<SelectedCourse> courseSelectedList) {
-        Document document = Jsoup.parse(html);
-        if (document != null) {
-            //填充课程列表缺失的数据
-            String startIndexStr = "选课信息：当前选课是第 <span style='text-decoration:underline;font-weight:bold;color:red;font-size:12pt;'>";
-            String endIndexStr = "</span> 轮选课,选课方式：";
-            if (html.contains(startIndexStr) && html.contains(endIndexStr)) {
-                String batch = html.substring(html.indexOf(startIndexStr) + startIndexStr.length(), html.indexOf(endIndexStr));
-                courseType.setBatch(Integer.parseInt(batch));
-            }
-
-            startIndexStr = "$(\"#Term\").text('";
-            endIndexStr = "');";
-            if (html.contains(startIndexStr) && html.contains(endIndexStr)) {
-                int startIndex = html.indexOf(startIndexStr) + startIndexStr.length();
-                String term = html.substring(startIndex, html.indexOf(endIndexStr, startIndex));
-                courseType.setTerm(term);
-            }
-
-            Element body = document.body();
-            Element s = body.getElementById("s");
-            if (s != null) {
-                courseType.setStartDateCode(s.text());
-            }
-            Element e = body.getElementById("e");
-            if (e != null) {
-                courseType.setEndDateCode(e.text());
-            }
-            Element courseSelectStyle = body.getElementById("CourseSelectStyle");
-            if (courseSelectStyle != null) {
-                courseType.setCourseSelectStyle(courseSelectStyle.text());
-            }
-            Element totalLimitInfo = body.getElementById("TotalLimitInfo");
-            if (totalLimitInfo != null) {
-                courseType.setAvailableNum(Integer.parseInt(totalLimitInfo.text()));
-            }
-            Element electedNum = body.getElementById("ElectedNum");
-            if (electedNum != null) {
-                courseType.setSelectedNum(Integer.parseInt(electedNum.text()));
-            }
-            Element limitInfo = body.getElementById("LimitInfo");
-            if (limitInfo != null) {
-                courseType.setBatchAvailableNum(Integer.parseInt(limitInfo.text()));
-            }
-            Element startDate = body.getElementById("StartDate");
-            if (startDate != null) {
-                courseType.setStartDate(startDate.text());
-            }
-            Element endDate = body.getElementById("EndDate");
-            if (endDate != null) {
-                courseType.setEndDate(endDate.text());
-            }
-            Element rule = body.getElementById("rule");
-            if (rule != null) {
-                courseType.setBanRule(rule.text());
-            }
-
-            courseType.setHasDetail(true);
-
-            //已选课程列表
-            Element selectedCourseList = body.getElementById("SelectedCourses");
-            if (selectedCourseList != null) {
-                Elements tr = selectedCourseList.getElementsByTag("tr");
-                for (int i = 2; i < tr.size(); i++) {
-                    SelectedCourse selectedCourse = new SelectedCourse();
-                    Elements td = tr.get(i).getElementsByTag("td");
-                    for (int j = 0; j < td.size(); j++) {
-                        Element detail = td.get(j);
-                        String text = detail.text();
-                        //区分处理不同类别的课程选课数据
-                        switch (j) {
-                            case 0:
-                                selectedCourse.setIndex(Integer.parseInt(text));
-                                break;
-                            case 1:
-                                selectedCourse.setTeachingClass(text);
-                                break;
-                            case 2:
-                                selectedCourse.setName(text);
-                                for (Element element : detail.getElementsByTag("a")) {
-                                    if (element.hasAttr("href") && element.attr("href").length() > 6) {
-                                        selectedCourse.setCourseId(element.attr("href").substring(6));
-                                    }
-                                }
-                                break;
-                            case 3:
-                                if (text.isEmpty()) {
-                                    selectedCourse.setScore(0);
-                                } else {
-                                    selectedCourse.setScore(Float.parseFloat(text));
-                                }
-                                break;
-                            case 4:
-                                if (courseType.getName().contains("专业选修课")) {
-                                    selectedCourse.setTeacher(text);
-                                } else {
-                                    selectedCourse.setCollege(text);
-                                }
-                                break;
-                            case 5:
-                                if (courseType.getName().contains("专业选修课")) {
-                                    selectedCourse.setSelectTime(text);
-                                } else {
-                                    selectedCourse.setTeacher(text);
-                                }
-                                break;
-                            case 6:
-                                if (courseType.getName().contains("专业选修课")) {
-                                    selectedCourse.setCourseType(text);
-                                } else {
-                                    selectedCourse.setSelectTime(text);
-                                }
-                                break;
-                            case 7:
-                                for (Element element : detail.getElementsByTag("a")) {
-                                    if (element.hasAttr("href")) {
-                                        String href = element.attr("href");
-                                        if (href.length() > 25) {
-                                            String postData = href.substring(23, href.length() - 2);
-                                            if (postData.contains("','")) {
-                                                String[] postArr = postData.split("','");
-                                                for (int k = 0; k < postArr.length; k++) {
-                                                    switch (k) {
-                                                        case 0:
-                                                            selectedCourse.setPostIndex(Integer.parseInt(postArr[k]));
-                                                            break;
-                                                        case 1:
-                                                            selectedCourse.setPostId(postArr[k]);
-                                                            break;
-                                                        case 2:
-                                                            selectedCourse.setPostTc(postArr[k]);
-                                                            break;
-                                                        case 3:
-                                                            selectedCourse.setPostc(postArr[k]);
-                                                            break;
-                                                        case 4:
-                                                            selectedCourse.setPostTm(postArr[k]);
-                                                            break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                break;
-                        }
-                    }
-                    courseSelectedList.add(selectedCourse);
-                }
-            }
-
-            //所有选课列表
-            Element courseListTable = body.getElementById("CourseList");
-            if (courseListTable != null) {
-                Elements tr = courseListTable.getElementsByTag("tr");
-                for (int i = 2; i < tr.size(); i++) {
-                    Course course = new Course();
-                    Elements td = tr.get(i).getElementsByTag("td");
-                    for (int j = 0; j < td.size(); j++) {
-                        Element detail = td.get(j);
-                        String text = detail.text();
-                        //区分处理不同类别的课程选课数据
-                        switch (j) {
-                            case 0:
-                                if (text.contains("禁选")) {
-                                    text = text.replace("禁选", "");
-                                    course.setAvailable(false);
-                                }
-                                course.setIndex(Integer.parseInt(text));
-                                for (Element element : detail.getElementsByTag("input")) {
-                                    if (element.hasAttr("value")) {
-                                        course.setCourseId(element.attr("value"));
-                                    }
-                                }
-                                break;
-                            case 1:
-                                course.setTeachingClass(text);
-                                break;
-                            case 2:
-                                course.setName(text);
-                                break;
-                            case 3:
-                                if (text.isEmpty()) {
-                                    course.setScore(0);
-                                } else {
-                                    course.setScore(Float.parseFloat(text));
-                                }
-                                break;
-                            case 4:
-                                if (courseType.getName().contains("专业选修课")) {
-                                    course.setTeacher(text);
-                                } else {
-                                    course.setCollege(text);
-                                }
-                                break;
-                            case 5:
-                                if (courseType.getName().contains("专业选修课")) {
-                                    course.setTime(text);
-                                } else {
-                                    course.setTeacher(text);
-                                }
-                                break;
-                            case 6:
-                                if (courseType.getName().contains("学校安排重修")) {
-                                    course.setCourseProperty(text);
-                                } else if (!courseType.getName().contains("专业选修课")) {
-                                    course.setTime(text);
-                                }
-                                break;
-                            case 7:
-                                if (courseType.getName().contains("专业选修课")) {
-                                    if (text.contains("不限")) {
-                                        course.setAvailableNum(0);
-                                        course.setInfinite(true);
-                                    } else {
-                                        course.setAvailableNum(Integer.parseInt(text));
-                                        course.setInfinite(false);
-                                    }
-                                } else {
-                                    course.setDescription(text);
-                                }
-                                break;
-                            case 8:
-                                if (courseType.getName().contains("专业选修课")) {
-                                    course.setSelectedNum(Integer.parseInt(text));
-                                } else if (courseType.getName().contains("英语后续课程") || courseType.getName().contains("学校安排重修")) {
-                                    if (text.contains("不限")) {
-                                        course.setAvailableNum(0);
-                                        course.setInfinite(true);
-                                    } else {
-                                        course.setAvailableNum(Integer.parseInt(text));
-                                        course.setInfinite(false);
-                                    }
-                                } else {
-                                    course.setBatch(Integer.parseInt(text.substring(1)));
-                                }
-                                break;
-                            case 9:
-                                if (courseType.getName().contains("专业选修课")) {
-                                    course.setBatch(Integer.parseInt(text.substring(1)));
-                                } else if (courseType.getName().contains("英语后续课程") || courseType.getName().contains("学校安排重修")) {
-                                    course.setSelectedNum(Integer.parseInt(text));
-                                } else {
-                                    if (text.contains("不限")) {
-                                        course.setAvailableNum(0);
-                                        course.setInfinite(true);
-                                    } else {
-                                        course.setAvailableNum(Integer.parseInt(text));
-                                        course.setInfinite(false);
-                                    }
-                                }
-                                break;
-                            case 10:
-                                if (courseType.getName().contains("专业选修课")) {
-                                    course.setDescription(text);
-                                } else if (courseType.getName().contains("英语后续课程")) {
-                                    course.setBatch(Integer.parseInt(text.substring(1)));
-                                } else {
-                                    course.setSelectedNum(Integer.parseInt(text));
-                                }
-                                break;
-                        }
-                    }
-                    courseList.add(course);
-                }
-            }
+    private static void fillCourseType(Element body, String html, CourseType courseType) {
+        //填充课程列表缺失的数据
+        String startIndexStr = "选课信息：当前选课是第 <span style='text-decoration:underline;font-weight:bold;color:red;font-size:12pt;'>";
+        String endIndexStr = "</span> 轮选课,选课方式：";
+        if (html.contains(startIndexStr) && html.contains(endIndexStr)) {
+            String batch = html.substring(html.indexOf(startIndexStr) + startIndexStr.length(), html.indexOf(endIndexStr));
+            courseType.setBatch(Integer.parseInt(batch));
         }
+
+        startIndexStr = "$(\"#Term\").text('";
+        endIndexStr = "');";
+        if (html.contains(startIndexStr) && html.contains(endIndexStr)) {
+            int startIndex = html.indexOf(startIndexStr) + startIndexStr.length();
+            String term = html.substring(startIndex, html.indexOf(endIndexStr, startIndex));
+            courseType.setTerm(term);
+        }
+
+        Element s = body.getElementById("s");
+        if (s != null) {
+            courseType.setStartDateCode(s.text());
+        }
+        Element e = body.getElementById("e");
+        if (e != null) {
+            courseType.setEndDateCode(e.text());
+        }
+        Element courseSelectStyle = body.getElementById("CourseSelectStyle");
+        if (courseSelectStyle != null) {
+            courseType.setCourseSelectStyle(courseSelectStyle.text());
+        }
+        Element totalLimitInfo = body.getElementById("TotalLimitInfo");
+        if (totalLimitInfo != null) {
+            courseType.setAvailableNum(Integer.parseInt(totalLimitInfo.text()));
+        }
+        Element electedNum = body.getElementById("ElectedNum");
+        if (electedNum != null) {
+            courseType.setSelectedNum(Integer.parseInt(electedNum.text()));
+        }
+        Element limitInfo = body.getElementById("LimitInfo");
+        if (limitInfo != null) {
+            courseType.setBatchAvailableNum(Integer.parseInt(limitInfo.text()));
+        }
+        Element startDate = body.getElementById("StartDate");
+        if (startDate != null) {
+            courseType.setStartDate(startDate.text());
+        }
+        Element endDate = body.getElementById("EndDate");
+        if (endDate != null) {
+            courseType.setEndDate(endDate.text());
+        }
+        Element rule = body.getElementById("rule");
+        if (rule != null) {
+            courseType.setBanRule(rule.text());
+        }
+
+        courseType.setHasDetail(true);
     }
 
     /**
@@ -386,6 +178,73 @@ public class CourseList {
                 courseType.setSubmitType(SUBMIT_TYPE_NORMAL);
                 break;
         }
+    }
+
+    /**
+     * 从html获取指定类别的课程列表
+     * 会将课程类别填充完整
+     *
+     * @param html               网页数据
+     * @param courseType         课程类别
+     * @param courseList         课程列表
+     * @param courseSelectedList 已选课程列表
+     */
+    private void getCourseListFromHtml(String html, CourseType courseType, ArrayList<Course> courseList, ArrayList<SelectedCourse> courseSelectedList) {
+        Document document = Jsoup.parse(html);
+        if (document != null) {
+            Element body = document.body();
+            fillCourseType(body, html, courseType);
+
+            AnalyseCourseType customAnalyse = null;
+            for (AnalyseCourseType analyseCourseType : analyseCourseTypes) {
+                if (courseType.getName().equals(analyseCourseType.getCourseType())) {
+                    customAnalyse = analyseCourseType;
+                    break;
+                }
+            }
+
+            //已选课程列表
+            Element selectedCourseList = body.getElementById("SelectedCourses");
+            if (selectedCourseList != null) {
+                Elements tr = selectedCourseList.getElementsByTag("tr");
+                for (int i = 2; i < tr.size(); i++) {
+                    SelectedCourse selectedCourse = new SelectedCourse();
+                    Elements td = tr.get(i).getElementsByTag("td");
+                    for (int j = 0; j < td.size(); j++) {
+                        Element detail = td.get(j);
+                        String text = detail.text();
+                        //区分处理不同类别的课程选课数据
+                        if (customAnalyse == null || !customAnalyse.analyseSelectedCourse(selectedCourse, j, detail, text)) {
+                            defaultCourseType.analyseSelectedCourse(selectedCourse, j, detail, text);
+                        }
+                    }
+                    courseSelectedList.add(selectedCourse);
+                }
+            }
+
+            //所有选课列表
+            Element courseListTable = body.getElementById("CourseList");
+            if (courseListTable != null) {
+                Elements tr = courseListTable.getElementsByTag("tr");
+                for (int i = 2; i < tr.size(); i++) {
+                    Course course = new Course();
+                    Elements td = tr.get(i).getElementsByTag("td");
+                    for (int j = 0; j < td.size(); j++) {
+                        Element detail = td.get(j);
+                        String text = detail.text();
+                        //区分处理不同类别的课程选课数据
+                        if (customAnalyse == null || !customAnalyse.analyseCourseList(course, j, detail, text)) {
+                            defaultCourseType.analyseCourseList(course, j, detail, text);
+                        }
+                    }
+                    courseList.add(course);
+                }
+            }
+        }
+    }
+
+    public void addNewCourseType(AnalyseCourseType... courseTypes) {
+        analyseCourseTypes.addAll(Arrays.asList(courseTypes));
     }
 
     /**

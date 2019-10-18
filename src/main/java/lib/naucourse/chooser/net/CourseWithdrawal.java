@@ -17,23 +17,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class CourseWithdrawal {
-    /**
-     * 未知错误
-     */
-    public static final int ERROR_UNKNOWN = 0;
-    /**
-     * 退选课程列表错误
-     */
-    public static final int ERROR_COURSE_LIST = 1;
-    /**
-     * 数据请求错误
-     */
-    public static final int ERROR_DATA_POST = 2;
-    /**
-     * 超时错误
-     */
-    public static final int ERROR_TIME_OUT = 3;
-
     private static final String URL = SchoolClient.JWC_SERVER_URL + "Servlet/DeleteCourseInfo.ashx";
     private final SchoolClient schoolClient;
     private final ExecutorService pool;
@@ -80,7 +63,7 @@ public class CourseWithdrawal {
                     submitResultGetCount++;
                     if (onWithdrawalListener != null) {
                         if (error) {
-                            onWithdrawalListener.onFailed(ERROR_DATA_POST);
+                            onWithdrawalListener.onFailed(WithdrawalError.DATA_POST);
                         } else {
                             onWithdrawalListener.onSubmitSuccess(withdrawalResult);
                         }
@@ -92,7 +75,7 @@ public class CourseWithdrawal {
                 }
             });
         } else if (onWithdrawalListener != null) {
-            onWithdrawalListener.onFailed(ERROR_COURSE_LIST);
+            onWithdrawalListener.onFailed(WithdrawalError.COURSE_LIST);
         }
     }
 
@@ -123,6 +106,25 @@ public class CourseWithdrawal {
         return formBuilder.build();
     }
 
+    public enum WithdrawalError {
+        /**
+         * 未知错误
+         */
+        UNKNOWN,
+        /**
+         * 退选课程列表错误
+         */
+        COURSE_LIST,
+        /**
+         * 数据请求错误
+         */
+        DATA_POST,
+        /**
+         * 超时错误
+         */
+        TIME_OUT
+    }
+
     /**
      * 退选课程监听器
      */
@@ -147,6 +149,6 @@ public class CourseWithdrawal {
          *
          * @param errorCode 错误代码
          */
-        void onFailed(int errorCode);
+        void onFailed(WithdrawalError errorCode);
     }
 }

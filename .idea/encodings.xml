@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/src/main/java/lib/naucourse/chooser/net/coursetype/AnalyseCourseType.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/lib/naucourse/chooser/net/coursetype/DefaultAnalyseCourseType.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/lib/naucourse/chooser/net/coursetype/EnglishFollowAnalyseCourse.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/lib/naucourse/chooser/net/coursetype/MajorAnalyseCourse.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/lib/naucourse/chooser/net/coursetype/SchoolRetakeAnalyseCourse.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/lib/naucourse/chooser/net/school/HeaderBuilder.java" charset="UTF-8" />
   </component>
 </project>

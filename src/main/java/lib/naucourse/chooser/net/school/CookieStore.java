@@ -3,6 +3,7 @@ package lib.naucourse.chooser.net.school;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,10 +20,11 @@ class CookieStore implements CookieJar {
     }
 
     @Override
-    public void saveFromResponse(HttpUrl httpUrl, List<Cookie> list) {
+    public void saveFromResponse(HttpUrl httpUrl, @NotNull List<Cookie> list) {
         cookieMap.put(httpUrl.host(), list);
     }
 
+    @NotNull
     @Override
     public List<Cookie> loadForRequest(HttpUrl httpUrl) {
         List<Cookie> cookies = cookieMap.get(httpUrl.host());

@@ -2,6 +2,7 @@ lib.naucourse.chooser.io
 lib.naucourse.chooser.manage
 lib.naucourse.chooser.net
 lib.naucourse.chooser.net.callable
+lib.naucourse.chooser.net.coursetype
 lib.naucourse.chooser.net.school
 lib.naucourse.chooser.tool
 lib.naucourse.chooser.util

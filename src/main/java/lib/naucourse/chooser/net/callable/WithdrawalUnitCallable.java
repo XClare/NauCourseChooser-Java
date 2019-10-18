@@ -1,6 +1,6 @@
 package lib.naucourse.chooser.net.callable;
 
-import lib.naucourse.chooser.net.CourseWithdrawal;
+import lib.naucourse.chooser.net.CourseWithdrawal.WithdrawalError;
 import lib.naucourse.chooser.net.school.SchoolClient;
 import lib.naucourse.chooser.util.withdrawal.WithdrawalResult;
 import lib.naucourse.chooser.util.withdrawal.WithdrawalUnit;
@@ -29,11 +29,11 @@ public class WithdrawalUnitCallable implements Callable<WithdrawalResult> {
         WithdrawalResult result;
         try {
             String content = schoolClient.postJwcData(withdrawalUnit.getUrl(), withdrawalUnit.getFormBody());
-            result = new WithdrawalResult(withdrawalUnit.getCourseType(), withdrawalUnit.getSelectedCourse(), content, CourseWithdrawal.ERROR_UNKNOWN, content.contains("退课成功"));
+            result = new WithdrawalResult(withdrawalUnit.getCourseType(), withdrawalUnit.getSelectedCourse(), content, WithdrawalError.UNKNOWN, content.contains("退课成功"));
         } catch (SocketTimeoutException e) {
-            result = new WithdrawalResult(withdrawalUnit.getCourseType(), withdrawalUnit.getSelectedCourse(), null, CourseWithdrawal.ERROR_TIME_OUT, false);
+            result = new WithdrawalResult(withdrawalUnit.getCourseType(), withdrawalUnit.getSelectedCourse(), null, WithdrawalError.TIME_OUT, false);
         } catch (IOException e) {
-            result = new WithdrawalResult(withdrawalUnit.getCourseType(), withdrawalUnit.getSelectedCourse(), null, CourseWithdrawal.ERROR_DATA_POST, false);
+            result = new WithdrawalResult(withdrawalUnit.getCourseType(), withdrawalUnit.getSelectedCourse(), null, WithdrawalError.DATA_POST, false);
         }
         return result;
     }
