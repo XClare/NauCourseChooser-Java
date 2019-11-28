@@ -1,4 +1,5 @@
 # NauCourseChooser-Java
+[![Build Status](https://travis-ci.com/XClare/NauCourseChooser-Java.svg?branch=master)](https://travis-ci.com/XClare/NauCourseChooser-Java)  
 ## Description:
 This is a course select sdk for Nanjing Audit University.  
 YOU CAN'T DOWNLOAD AND RUN THIS DIRECTLY BECAUSE THIS IS JUST A SDK!
