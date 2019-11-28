@@ -4,7 +4,9 @@ import lib.naucourse.chooser.net.CourseChoose;
 import lib.naucourse.chooser.util.Course;
 import lib.naucourse.chooser.util.CourseType;
 
-public class ChooseResult {
+import java.io.Serializable;
+
+public class ChooseResult implements Serializable {
     private final Course course;
     private final CourseType courseType;
     private final CourseChoose.CourseError errorCode;

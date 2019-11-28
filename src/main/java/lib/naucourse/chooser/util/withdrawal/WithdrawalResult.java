@@ -4,7 +4,9 @@ import lib.naucourse.chooser.net.CourseWithdrawal.WithdrawalError;
 import lib.naucourse.chooser.util.CourseType;
 import lib.naucourse.chooser.util.SelectedCourse;
 
-public class WithdrawalResult {
+import java.io.Serializable;
+
+public class WithdrawalResult implements Serializable {
     private final boolean isSuccess;
     private final SelectedCourse selectedCourse;
     private final CourseType courseType;

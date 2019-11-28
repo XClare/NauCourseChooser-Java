@@ -1,11 +1,11 @@
-package lib.naucourse.chooser.io;
+package lib.naucourse.chooser.tool;
 
 import java.io.*;
 
 /**
  * 文件读写相关操作
  */
-public class BaseIO {
+public class FileUtils {
     /**
      * 写入字符串到文件
      *

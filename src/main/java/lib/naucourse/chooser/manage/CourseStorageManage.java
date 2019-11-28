@@ -3,7 +3,7 @@ package lib.naucourse.chooser.manage;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import lib.naucourse.chooser.io.BaseIO;
+import lib.naucourse.chooser.tool.FileUtils;
 import lib.naucourse.chooser.util.Course;
 import lib.naucourse.chooser.util.CourseType;
 import lib.naucourse.chooser.util.DataPath;
@@ -39,7 +39,7 @@ public class CourseStorageManage {
     private static String getFileData(String path) {
         File file = new File(path);
         if (file.exists()) {
-            return BaseIO.readFile(path);
+            return FileUtils.readFile(path);
         }
         return null;
     }
@@ -55,7 +55,7 @@ public class CourseStorageManage {
         try {
             String data = new Gson().toJson(object);
             if (data != null) {
-                return BaseIO.writeFile(data, path);
+                return FileUtils.writeFile(data, path);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -70,7 +70,7 @@ public class CourseStorageManage {
      * @return 是否删除成功
      */
     public boolean deleteData(String fileName) {
-        return BaseIO.deleteFile(new File(dataPath.getDataPath() + fileName));
+        return FileUtils.deleteFile(new File(dataPath.getDataPath() + fileName));
     }
 
     /**
@@ -121,7 +121,7 @@ public class CourseStorageManage {
      * @return 选课列表
      */
     public LinkedHashMap<CourseType, HashMap<String, Course>> getChooseCourseList() {
-        LinkedHashMap<CourseType, HashMap<String, Course>> result = null;
+        LinkedHashMap<CourseType, HashMap<String, Course>> result = new LinkedHashMap<>();
         String filePath = dataPath.getDataPath() + FILE_CHOOSE_COURSE_LIST;
         String content = getFileData(filePath);
         if (content != null) {
@@ -153,7 +153,7 @@ public class CourseStorageManage {
      * @return 已选课程列表
      */
     public LinkedHashMap<CourseType, ArrayList<SelectedCourse>> getSelectedCourseList() {
-        LinkedHashMap<CourseType, ArrayList<SelectedCourse>> result = null;
+        LinkedHashMap<CourseType, ArrayList<SelectedCourse>> result = new LinkedHashMap<>();
         String filePath = dataPath.getDataPath() + FILE_SELECTED_COURSE_LIST;
         String content = getFileData(filePath);
         if (content != null) {

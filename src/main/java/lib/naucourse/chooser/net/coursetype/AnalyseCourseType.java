@@ -8,7 +8,7 @@ public interface AnalyseCourseType {
     /**
      * 获取课程类别
      *
-     * @return 课程类型的字符串名称（为null时指所有类型）
+     * @return 课程类型的字符串名称（为null时指所有类型，仅限默认类别分析器使用）
      */
     String getCourseType();
 

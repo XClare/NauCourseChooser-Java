@@ -20,13 +20,17 @@ public class SchoolClient {
      * 教务系统根域名地址
      */
     public static final String JWC_SERVER_URL = "http://jwc.nau.edu.cn/";
+    private static final String JWC_LOGIN_KEEP_URL = JWC_SERVER_URL + "Students/StuInfoPwdManage.aspx";
     private static final String JWC_LOGOUT_URL = JWC_SERVER_URL + "LoginOut.aspx";
     private static final String SSO_JWC_LOGIN_URL = "http://sso.nau.edu.cn/sso/login?service=http%3a%2f%2fjwc.nau.edu.cn%2fLogin_Single.aspx";
     private static final String SSO_JWC_LOGOUT_URL = "http://sso.nau.edu.cn/sso/logout";
+    private static final int LOGIN_KEEP_LOOP_SECOND = 60;
     private static boolean tryingReLogin = false;
     private final OkHttpClient client;
     private final CookieStore cookieStore;
     private final HeaderBuilder headerBuilder;
+    private final boolean useLoginKeeper;
+    private boolean isLoginKeeperRunning = false;
     private String mainPageUrl = null;
     private String userId = null;
     private String userPw = null;
@@ -39,8 +43,11 @@ public class SchoolClient {
      * @param connectTimeOut 连接超时（秒）
      * @param readTimeOut    读取超时（秒）
      * @param writeTimeOut   写入超时（秒）
+     * @param useLoginKeeper 使用登录保持器（尝试保持登录状态直到注销）
      */
-    public SchoolClient(String cachePath, int connectTimeOut, int readTimeOut, int writeTimeOut) {
+    public SchoolClient(String cachePath, int connectTimeOut, int readTimeOut, int writeTimeOut, boolean useLoginKeeper) {
+        this.useLoginKeeper = useLoginKeeper;
+
         cookieStore = new CookieStore();
 
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
@@ -52,7 +59,7 @@ public class SchoolClient {
         clientBuilder.retryOnConnectionFailure(true);
         client = clientBuilder.build();
 
-        this.headerBuilder = new HeaderBuilder();
+        this.headerBuilder = HeaderBuilder.getInstance();
     }
 
     /**
@@ -134,13 +141,16 @@ public class SchoolClient {
                                     //登陆成功的判断
                                     if (onNetListener != null && (body.contains("密码错误") || body.contains("南京审计大学统一身份认证登录"))) {
                                         onNetListener.onError(PASSWORD);
-                                    } else if (onNetListener != null && body.contains("当前你已经登录")) {
+                                    } else if (onNetListener != null && (body.contains("当前你已经登录") || body.contains("同一时间内只允许登陆一次"))) {
                                         onNetListener.onError(ALREADY_LOGIN);
                                     } else if (onNetListener != null && body.contains("请勿输入非法字符")) {
                                         onNetListener.onError(WRONG_SYMBOL);
                                     } else if (body.contains("南京审计大学教学信息管理系统") && query != null && query.contains("r=") && query.contains("&d=")) {
                                         loginStatus = true;
                                         mainPageUrl = url;
+                                        if (useLoginKeeper) {
+                                            keepLogin();
+                                        }
                                         if (onNetListener != null) {
                                             onNetListener.onSuccess(url, body);
                                         }
@@ -270,7 +280,7 @@ public class SchoolClient {
      *
      * @param onNetListener 网络获取监听器
      */
-    synchronized public void tryReLogin(OnNetListener onNetListener) {
+    private synchronized void tryReLogin(OnNetListener onNetListener) {
         if (tryingReLogin) {
             while (tryingReLogin) {
                 try {
@@ -403,6 +413,24 @@ public class SchoolClient {
         }
 
         return formBuilder.build();
+    }
+
+    synchronized private void keepLogin() {
+        if (!isLoginKeeperRunning) {
+            final Request request = new Request.Builder().url(JWC_LOGIN_KEEP_URL).build();
+            isLoginKeeperRunning = true;
+            new Thread(() -> {
+                while (loginStatus && useLoginKeeper && client != null) {
+                    try {
+                        client.newCall(request).execute();
+                        Thread.sleep(LOGIN_KEEP_LOOP_SECOND * 1000);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                isLoginKeeperRunning = false;
+            }).start();
+        }
     }
 
     public enum ClientError {

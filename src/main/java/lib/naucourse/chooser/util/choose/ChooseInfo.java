@@ -1,6 +1,8 @@
 package lib.naucourse.chooser.util.choose;
 
-public class ChooseInfo {
+import java.io.Serializable;
+
+public class ChooseInfo implements Serializable {
     private final int perClassSubmitCount;
     private final int totalSubmitTurn;
     private final int submitListMaxNum;

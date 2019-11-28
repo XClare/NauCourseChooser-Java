@@ -18,9 +18,6 @@ public class Main {
     private static String pw;
 
     public static void main(String[] args) {
-        id = "";
-        pw = "";
-
         if (id.isEmpty() || pw.isEmpty()) {
             Scanner scanner = new Scanner(System.in);
             System.out.println("UserID:");
@@ -34,11 +31,11 @@ public class Main {
 
     private static void showJwc(String userId, String userPw) {
         JarDataPath dataPath = new JarDataPath();
-        SchoolClientManage jwcManage = new SchoolClientManage(dataPath, 5, 5, 5);
+        SchoolClientManage jwcManage = new SchoolClientManage(dataPath, 5, 5, 5, true);
         jwcManage.login(userId, userPw, true, new SchoolClientManage.OnLoginListener() {
             @Override
             public boolean onLogin(String userUrl) {
-                jwcManage.getCourseType(new CourseList.OnCourseTypeListener() {
+                jwcManage.getCourseTypes(new CourseList.OnCourseTypeListener() {
                     @Override
                     public void getCourseType(ArrayList<CourseType> courseTypes) {
                         System.out.println("All Support Type:");
@@ -60,7 +57,7 @@ public class Main {
                                 CourseManage chooseCourseManage = new CourseManage();
                                 chooseCourseManage.addChooseCourse(courseTypes.get(7), courseList.get(1), false);
 
-                                jwcManage.submitChooseCourse(new ChooseInfo(1, 2, 10, true, false),
+                                boolean result = jwcManage.submitChooseCourses(new ChooseInfo(1, 2, 10, true, false),
                                         chooseCourseManage.getChooseCourseList(),
                                         new CourseChoose.OnSubmitListener() {
                                             @Override
@@ -87,26 +84,32 @@ public class Main {
                                                 System.out.println("Turn" + turn + " Error: " + errorCode);
                                             }
                                         });
+                                if (result) {
+                                    System.out.println("Submit Success");
+                                } else {
+                                    System.out.println("Submit Failed");
+                                }
                             }
 
                             @Override
                             public void onError() {
-
+                                System.out.println("Course List Error");
                             }
                         });
                     }
 
                     @Override
                     public void onError() {
-
+                        System.out.println("Course Type Error");
                     }
                 });
+
                 return false;
             }
 
             @Override
             public void onFailed() {
-
+                System.out.println("Login Failed");
             }
         });
     }

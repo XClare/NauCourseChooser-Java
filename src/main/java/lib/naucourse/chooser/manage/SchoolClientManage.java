@@ -32,9 +32,10 @@ public class SchoolClientManage {
      * @param connectTimeOut 连接超时（秒）
      * @param readTimeOut    读取超时（秒）
      * @param writeTimeOut   写入超时（秒）
+     * @param useLoginKeeper 使用登录保持器（尝试保持登录状态直到注销）
      */
-    public SchoolClientManage(DataPath dataPath, int connectTimeOut, int readTimeOut, int writeTimeOut) {
-        this.schoolClient = new SchoolClient(dataPath.getCachePath(), connectTimeOut, readTimeOut, writeTimeOut);
+    public SchoolClientManage(DataPath dataPath, int connectTimeOut, int readTimeOut, int writeTimeOut, boolean useLoginKeeper) {
+        this.schoolClient = new SchoolClient(dataPath.getCachePath(), connectTimeOut, readTimeOut, writeTimeOut, useLoginKeeper);
         this.courseList = new CourseList(schoolClient, new DefaultAnalyseCourseType());
         this.courseList.addNewCourseType(new EnglishFollowAnalyseCourse(),
                 new MajorAnalyseCourse(),
@@ -77,7 +78,7 @@ public class SchoolClientManage {
                 if (errorCode == ALREADY_LOGIN && tryReLogin) {
                     schoolClient.jwcLogout(null);
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(1500);
                     } catch (InterruptedException ignored) {
                     }
                     login(userId, userPw, false, onLoginListener);
@@ -103,9 +104,10 @@ public class SchoolClientManage {
      * @param submitInfo       提交课程的信息
      * @param chooseCourseList 选择的课程
      * @param onSubmitListener 提交的监听器
+     * @return 是否提交成功（同一时刻只能提交一次）
      */
-    public void submitChooseCourse(ChooseInfo submitInfo, LinkedHashMap<CourseType, HashMap<String, ArrayList<Course>>> chooseCourseList, CourseChoose.OnSubmitListener onSubmitListener) {
-        this.courseChoose.submit(submitInfo, chooseCourseList, onSubmitListener);
+    public boolean submitChooseCourses(ChooseInfo submitInfo, LinkedHashMap<CourseType, HashMap<String, ArrayList<Course>>> chooseCourseList, CourseChoose.OnSubmitListener onSubmitListener) {
+        return this.courseChoose.submit(submitInfo, chooseCourseList, onSubmitListener);
     }
 
     /**
@@ -116,13 +118,21 @@ public class SchoolClientManage {
     }
 
     /**
+     * 停止选课并重置线程池
+     */
+    public void cleanSubmitThread() {
+        this.courseChoose.cleanSubmitThread();
+    }
+
+    /**
      * 提交退选
      *
      * @param selectedCourseMap    退选的课程
      * @param onWithdrawalListener 退选的监听器
+     * @return 是否提交成功（同一时刻只能提交一次）
      */
-    public void submitWithdrawalCourse(LinkedHashMap<CourseType, ArrayList<SelectedCourse>> selectedCourseMap, CourseWithdrawal.OnWithdrawalListener onWithdrawalListener) {
-        this.courseWithdrawal.submit(selectedCourseMap, onWithdrawalListener);
+    public boolean submitWithdrawalCourse(LinkedHashMap<CourseType, ArrayList<SelectedCourse>> selectedCourseMap, CourseWithdrawal.OnWithdrawalListener onWithdrawalListener) {
+        return this.courseWithdrawal.submit(selectedCourseMap, onWithdrawalListener);
     }
 
     /**
@@ -133,11 +143,18 @@ public class SchoolClientManage {
     }
 
     /**
+     * 停止退课并重置线程池
+     */
+    public void cleanSubmitWithdrawalThread() {
+        this.courseWithdrawal.cleanSubmitThread();
+    }
+
+    /**
      * 获取课程类别列表
      *
      * @param courseTypeListener 获取课程类别列表的监听器
      */
-    public void getCourseType(CourseList.OnCourseTypeListener courseTypeListener) {
+    public void getCourseTypes(CourseList.OnCourseTypeListener courseTypeListener) {
         this.courseList.getCourseTypeList(courseTypeListener);
     }
 

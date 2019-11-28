@@ -34,7 +34,7 @@ public class CourseList {
 
     private final SchoolClient schoolClient;
     private final AnalyseCourseType defaultCourseType;
-    private final ArrayList<AnalyseCourseType> analyseCourseTypes = new ArrayList<>();
+    private final ArrayList<AnalyseCourseType> analyseCourseTypes = new ArrayList<>(3);
 
     /**
      * 课程列表获取

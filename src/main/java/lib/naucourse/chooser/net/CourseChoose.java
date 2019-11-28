@@ -11,11 +11,9 @@ import okhttp3.FormBody;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class CourseChoose {
+public class CourseChoose extends CourseSubmit {
     /**
      * 主要选课课程类型
      */
@@ -24,10 +22,6 @@ public class CourseChoose {
      * 备选选课课程类型
      */
     public static final String CHOOSE_SUBMIT_TYPE_SUB = "SubCourse";
-    private final SchoolClient schoolClient;
-    private final ExecutorService pool;
-    private int submitResultGetCount = 0;
-    private boolean stopSubmit = false;
 
     /**
      * 用于提交选课
@@ -35,99 +29,32 @@ public class CourseChoose {
      * @param schoolClient 教务系统客户端
      */
     public CourseChoose(SchoolClient schoolClient) {
-        this.schoolClient = schoolClient;
-        this.pool = Executors.newCachedThreadPool();
+        super(schoolClient);
     }
 
-    /**
-     * 提交选课
-     * 提交选课时不会检验是否已经登出，所以不能够断网换网
-     *
-     * @param submitInfo       提交的信息配置
-     * @param chooseCourseMap  选择的课程
-     * @param onSubmitListener 提交监听器
-     */
-    synchronized public void submit(final ChooseInfo submitInfo, final LinkedHashMap<CourseType, HashMap<String, ArrayList<Course>>> chooseCourseMap, final OnSubmitListener onSubmitListener) {
-        stopSubmit = false;
-        if (chooseCourseMap != null) {
-            submitResultGetCount = 0;
-            pool.submit(() -> {
-                //按类别整理为提交的类型提交课程
-                for (int turn = 0; turn < submitInfo.getTotalSubmitTurn(); turn++) {
-                    if (stopSubmit) {
-                        stopSubmit = false;
-                        return;
-                    }
-                    final ArrayList<Future<Void>> submitResultFutureArrayList = new ArrayList<>();
+    private static Hashtable<CourseType, Hashtable<String, ArrayList<ChooseUnit>>> prepareSubmitMap(final LinkedHashMap<CourseType, HashMap<String, ArrayList<Course>>> chooseCourseMap) {
+        Hashtable<CourseType, Hashtable<String, ArrayList<ChooseUnit>>> submitMap = new Hashtable<>();
 
-                    for (CourseType courseType : chooseCourseMap.keySet()) {
-                        Map<String, ArrayList<Course>> courseHashMap = chooseCourseMap.get(courseType);
+        for (CourseType courseType : chooseCourseMap.keySet()) {
+            Map<String, ArrayList<Course>> courseHashMap = chooseCourseMap.get(courseType);
 
-                        ArrayList<ChooseUnit> mainSubmitList = new ArrayList<>();
-                        ArrayList<ChooseUnit> subSubmitList = new ArrayList<>();
+            Hashtable<String, ArrayList<ChooseUnit>> submitTable = new Hashtable<>();
+            ArrayList<ChooseUnit> mainSubmitList = new ArrayList<>();
+            ArrayList<ChooseUnit> subSubmitList = new ArrayList<>();
 
-                        if (courseHashMap.containsKey(CHOOSE_SUBMIT_TYPE_MAIN)) {
-                            addToSubmitList(mainSubmitList, courseHashMap.get(CHOOSE_SUBMIT_TYPE_MAIN), courseType, false);
-                        }
-                        if (courseHashMap.containsKey(CHOOSE_SUBMIT_TYPE_SUB)) {
-                            addToSubmitList(subSubmitList, courseHashMap.get(CHOOSE_SUBMIT_TYPE_SUB), courseType, true);
-                        }
-                        //将提交的结果归总
-                        ChooseTypeCallable typeCallable = new ChooseTypeCallable(pool, schoolClient, submitInfo, mainSubmitList, subSubmitList);
-                        if (onSubmitListener != null) {
-                            typeCallable.setCallBack(turn + 1, onSubmitListener);
-                        }
-                        Future<Void> listFuture = pool.submit(typeCallable);
-                        submitResultFutureArrayList.add(listFuture);
-                    }
+            if (courseHashMap.containsKey(CHOOSE_SUBMIT_TYPE_MAIN)) {
+                addToSubmitList(mainSubmitList, courseHashMap.get(CHOOSE_SUBMIT_TYPE_MAIN), courseType, false);
+            }
+            if (courseHashMap.containsKey(CHOOSE_SUBMIT_TYPE_SUB)) {
+                addToSubmitList(subSubmitList, courseHashMap.get(CHOOSE_SUBMIT_TYPE_SUB), courseType, true);
+            }
 
-                    if (onSubmitListener != null) {
-                        if (submitInfo.isAutoRemoveMode() || submitInfo.isScanCourseMode()) {
-                            onSubmitListener.onSubmitProcess(1, 1);
-                        } else {
-                            onSubmitListener.onSubmitProcess(turn + 1, submitInfo.getTotalSubmitTurn());
-                        }
-                    }
-
-                    //等待一轮的提交的结果
-                    boolean error = false;
-                    for (Future<Void> listFuture : submitResultFutureArrayList) {
-                        if (error) {
-                            listFuture.cancel(true);
-                        } else {
-                            try {
-                                listFuture.get();
-                            } catch (InterruptedException ignored) {
-                            } catch (ExecutionException e) {
-                                listFuture.cancel(true);
-                                error = true;
-                            }
-                        }
-                    }
-                    submitResultGetCount++;
-                    if (onSubmitListener != null) {
-                        if (error) {
-                            onSubmitListener.onFailed(turn + 1, CourseError.DATA_POST);
-                        }
-                        if (submitResultGetCount >= submitInfo.getTotalSubmitTurn()) {
-                            System.gc();
-                            onSubmitListener.onSubmitFinish();
-                        }
-                    }
-
-                    //自动移除模式与扫课模式下只进行一轮
-                    if (submitInfo.isAutoRemoveMode() || submitInfo.isScanCourseMode()) {
-                        System.gc();
-                        if (onSubmitListener != null) {
-                            onSubmitListener.onSubmitFinish();
-                        }
-                        break;
-                    }
-                }
-            });
-        } else if (onSubmitListener != null) {
-            onSubmitListener.onFailed(0, CourseError.COURSE_LIST);
+            submitTable.put(CHOOSE_SUBMIT_TYPE_MAIN, mainSubmitList);
+            submitTable.put(CHOOSE_SUBMIT_TYPE_SUB, subSubmitList);
+            submitMap.put(courseType, submitTable);
         }
+
+        return submitMap;
     }
 
     /**
@@ -137,21 +64,11 @@ public class CourseChoose {
      * @param courses    课程
      * @param courseType 课程类别
      */
-    private void addToSubmitList(List<ChooseUnit> submitList, List<Course> courses, CourseType
+    private static void addToSubmitList(List<ChooseUnit> submitList, List<Course> courses, CourseType
             courseType, boolean isSubCourse) {
         for (Course course : courses) {
             submitList.add(new ChooseUnit(courseType, course, getPostForm(courseType, course), getPostUrl(courseType), isSubCourse));
         }
-    }
-
-    /**
-     * 停止提交课程
-     */
-    public void stopSubmit() {
-        if (!pool.isShutdown()) {
-            pool.shutdownNow();
-        }
-        stopSubmit = true;
     }
 
     /**
@@ -161,7 +78,7 @@ public class CourseChoose {
      * @param course     课程
      * @return 表单
      */
-    private FormBody getPostForm(CourseType courseType, Course course) {
+    private static FormBody getPostForm(CourseType courseType, Course course) {
         FormBody.Builder formBuilder = new FormBody.Builder();
         formBuilder.add("courseID", course.getCourseId());
         formBuilder.add("teachingClass", course.getTeachingClass());
@@ -180,7 +97,7 @@ public class CourseChoose {
      * @param courseType 课程类别
      * @return 网址
      */
-    private String getPostUrl(CourseType courseType) {
+    private static String getPostUrl(CourseType courseType) {
         switch (courseType.getSubmitType()) {
             case CourseList.SUBMIT_TYPE_ENG_EXPAND:
                 return SchoolClient.JWC_SERVER_URL + "Servlet/AddEngCourseSelectModel.ashx";
@@ -191,6 +108,110 @@ public class CourseChoose {
             default:
                 return SchoolClient.JWC_SERVER_URL + "Servlet/AddCourseSelectModel.ashx";
         }
+    }
+
+    /**
+     * 提交选课
+     * 提交选课时不会检验是否已经登出，所以不能够断网换网
+     *
+     * @param submitInfo       提交的信息配置
+     * @param chooseCourseMap  选择的课程
+     * @param onSubmitListener 提交监听器
+     * @return 是否提交成功（同一时刻只能提交一次）
+     */
+    synchronized public boolean submit(final ChooseInfo submitInfo, final LinkedHashMap<CourseType, HashMap<String, ArrayList<Course>>> chooseCourseMap, final OnSubmitListener onSubmitListener) {
+        if (submitLock.tryLock()) {
+            try {
+                stopSubmit = false;
+                if (chooseCourseMap != null) {
+                    submitResultGetCount = 0;
+                    pool.submit(() -> {
+                        try {
+                            //获取提交列表
+                            Hashtable<CourseType, Hashtable<String, ArrayList<ChooseUnit>>> submitMap = prepareSubmitMap(chooseCourseMap);
+
+                            //按类别整理为提交的类型提交课程
+                            for (int turn = 0; turn < submitInfo.getTotalSubmitTurn(); turn++) {
+                                if (stopSubmit) {
+                                    stopSubmit = false;
+                                    break;
+                                }
+                                ArrayList<Future<Void>> submitResultFutureArrayList = new ArrayList<>();
+
+                                for (Hashtable<String, ArrayList<ChooseUnit>> submitTable : submitMap.values()) {
+                                    if (stopSubmit) {
+                                        stopSubmit = false;
+                                        break;
+                                    }
+                                    //将提交的结果归总
+                                    ChooseTypeCallable typeCallable = new ChooseTypeCallable(pool, schoolClient, submitInfo, submitTable.get(CHOOSE_SUBMIT_TYPE_MAIN), submitTable.get(CHOOSE_SUBMIT_TYPE_SUB));
+                                    if (onSubmitListener != null) {
+                                        typeCallable.setCallBack(turn + 1, onSubmitListener);
+                                    }
+                                    Future<Void> listFuture = pool.submit(typeCallable);
+                                    submitResultFutureArrayList.add(listFuture);
+                                }
+
+                                if (onSubmitListener != null) {
+                                    if (submitInfo.isAutoRemoveMode() || submitInfo.isScanCourseMode()) {
+                                        onSubmitListener.onSubmitProcess(1, 1);
+                                    } else {
+                                        onSubmitListener.onSubmitProcess(turn + 1, submitInfo.getTotalSubmitTurn());
+                                    }
+                                }
+
+                                //等待一轮的提交的结果
+                                boolean error = false;
+                                for (Future<Void> listFuture : submitResultFutureArrayList) {
+                                    if (error) {
+                                        listFuture.cancel(true);
+                                    } else {
+                                        try {
+                                            listFuture.get();
+                                        } catch (InterruptedException ignored) {
+                                        } catch (ExecutionException e) {
+                                            listFuture.cancel(true);
+                                            error = true;
+                                        }
+                                    }
+                                    if (stopSubmit) {
+                                        stopSubmit = false;
+                                        break;
+                                    }
+                                }
+                                submitResultGetCount++;
+                                if (onSubmitListener != null) {
+                                    if (error) {
+                                        onSubmitListener.onFailed(turn + 1, CourseError.DATA_POST);
+                                    }
+                                    if (submitResultGetCount >= submitInfo.getTotalSubmitTurn()) {
+                                        System.gc();
+                                        onSubmitListener.onSubmitFinish();
+                                    }
+                                }
+
+                                //自动移除模式与扫课模式下只进行一轮
+                                if (submitInfo.isAutoRemoveMode() || submitInfo.isScanCourseMode()) {
+                                    System.gc();
+                                    if (onSubmitListener != null) {
+                                        onSubmitListener.onSubmitFinish();
+                                    }
+                                    break;
+                                }
+                            }
+                        } finally {
+                            submitLock.unlock();
+                        }
+                    });
+                } else if (onSubmitListener != null) {
+                    onSubmitListener.onFailed(0, CourseError.COURSE_LIST);
+                }
+            } catch (Exception pass) {
+                submitLock.unlock();
+            }
+            return true;
+        }
+        return false;
     }
 
     public enum CourseError {

@@ -1,9 +1,11 @@
 package lib.naucourse.chooser.util;
 
+import java.io.Serializable;
+
 /**
  * 已选课程
  */
-public class SelectedCourse {
+public class SelectedCourse implements Serializable {
     private int index;
     private String name;
     private String teacher;

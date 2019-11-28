@@ -4,7 +4,9 @@ import lib.naucourse.chooser.util.Course;
 import lib.naucourse.chooser.util.CourseType;
 import okhttp3.FormBody;
 
-public class ChooseUnit {
+import java.io.Serializable;
+
+public class ChooseUnit implements Serializable {
     private final Course course;
     private final CourseType courseType;
     private final FormBody formBody;

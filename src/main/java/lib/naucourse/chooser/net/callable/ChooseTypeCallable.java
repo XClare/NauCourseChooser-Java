@@ -81,8 +81,8 @@ public class ChooseTypeCallable implements Callable<Void> {
 
     @Override
     public Void call() throws Exception {
-        ArrayList<Future<ChooseResult>> mainSubmitList = new ArrayList<>();
-        ArrayList<Future<ChooseResult>> subSubmitList = new ArrayList<>();
+        ArrayList<Future<ChooseResult>> mainSubmitList = new ArrayList<>(mainList.size());
+        ArrayList<Future<ChooseResult>> subSubmitList = new ArrayList<>(subList.size());
 
         int successCount = 0;
         int listSubmitCount = 0;
