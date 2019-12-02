@@ -14,7 +14,7 @@ Jar packages are also available in release page.
 Or you can pack jars by yourself and import.
 
 ## To Call API:
-See test resources or JavaDoc.  
+See test resources or [JavaDoc](https://xclare.github.io/NauCourseChooser-Java/javaDoc/).  
 All callable api has descriptions.  
 
 ## Attention:
